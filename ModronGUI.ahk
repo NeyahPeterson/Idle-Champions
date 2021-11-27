@@ -574,7 +574,7 @@ MyWindowGuiClose()
     return True
 }
 
-$`::
+ScrollLock::
 Pause
 gPrevLevelTime := A_TickCount
 return

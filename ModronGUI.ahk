@@ -146,6 +146,8 @@ global gRedGemsStart	:=
 global gStackCountH	:=
 global gStackCountSB :=
 
+global gScriptPID := DllCall("GetCurrentProcessId")
+
 ;define a new gui with tabs and buttons
 Gui, MyWindow:New
 Gui, MyWindow:+Resize -MaximizeBox
@@ -574,10 +576,27 @@ MyWindowGuiClose()
     return True
 }
 
-ScrollLock::
-Pause
-gPrevLevelTime := A_TickCount
-return
+Pause::
+Do_Pause:
+{
+	WinGetTitle, gLastTitle, ahk_pid %gScriptPID%
+	SetTimer, Restore_Title, -5
+	WinSetTitle, ahk_pid %gScriptPID%, , %gLastTitle% --- Script Paused ---
+	Pause
+    gPrevLevelTime := A_TickCount
+}
+
+#If (A_IsPaused)
+	Pause::
+	Pause, off	
+	return
+#If
+
+Restore_Title:
+{
+	WinSetTitle, ahk_pid %gScriptPID%, , %gLastTitle%
+	return
+}
 
 ;a function that checks if IC is closed and restarts it. Then opens the process and reads the module base address, two necessary steps to read memory.
 SafetyCheck() 

@@ -529,7 +529,6 @@ MyWindowGuiClose()
     return True
 }
 
-$`::
 Pause::
 Do_Pause:
 {
@@ -540,7 +539,6 @@ Do_Pause:
 }
 
 #If (A_IsPaused)
-	$`::
 	Pause::
 	Pause, off	
 	return

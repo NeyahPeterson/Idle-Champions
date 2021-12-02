@@ -23,7 +23,7 @@ class GameManager
 
     GetVersion()
     {
-        return "v1.0, 11/11/21, IC v0.412, Steam"
+        return "v1.1, 11/30/21, IC v0.414, Steam"
     }
 
     Refresh()
@@ -139,7 +139,7 @@ class GameManager
         ;Screen and UI
         ;=================
         this.Game.GameInstance.Screen := New GameObjectStructure(this.Game.GameInstance,, [0x8])
-        this.Game.GameInstance.Screen.uiController := New GameObjectStructure(this.Game.GameInstance.Screen,, [0x22C])
+        this.Game.GameInstance.Screen.uiController := New GameObjectStructure(this.Game.GameInstance.Screen,, [0x230])
         this.Game.GameInstance.Screen.uiController.topBar := New GameObjectStructure(this.Game.GameInstance.Screen.uiController,, [0xC])
         this.Game.GameInstance.Screen.uiController.topBar.objectiveProgressBox := New GameObjectStructure(this.Game.GameInstance.Screen.uiController.topBar,, [0x1FC])
         this.Game.GameInstance.Screen.uiController.topBar.objectiveProgressBox.areaBar := New GameObjectStructure(this.Game.GameInstance.Screen.uiController.topBar.objectiveProgressBox,, [0x218])
@@ -157,7 +157,7 @@ class GameManagerEGS
 
     GetVersion()
     {
-        return "v1.0, 11/16/21, IC v0.412, EGS"
+        return "v1.1, 11/30/21, IC v0.414, EGS"
     }
     
     is64BBit()
@@ -277,7 +277,7 @@ class GameManagerEGS
         ;Screen and UI
         ;=================
         this.Game.GameInstance.Screen := New GameObjectStructure(this.Game.GameInstance,, [0x10])
-        this.Game.GameInstance.Screen.uiController := New GameObjectStructure(this.Game.GameInstance.Screen,, [0x350])
+        this.Game.GameInstance.Screen.uiController := New GameObjectStructure(this.Game.GameInstance.Screen,, [0x358])
         this.Game.GameInstance.Screen.uiController.topBar := New GameObjectStructure(this.Game.GameInstance.Screen.uiController,, [0x18])
         this.Game.GameInstance.Screen.uiController.topBar.objectiveProgressBox := New GameObjectStructure(this.Game.GameInstance.Screen.uiController.topBar,, [0x2F8])
         this.Game.GameInstance.Screen.uiController.topBar.objectiveProgressBox.areaBar := New GameObjectStructure(this.Game.GameInstance.Screen.uiController.topBar.objectiveProgressBox,, [0x330])

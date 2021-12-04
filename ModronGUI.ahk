@@ -770,7 +770,61 @@ DoUlts()
     }
 }
 
+;Pass Object Mode Option in regex string
+RegexMatchAll(h, n)
+{
+	r := []
+	p := 1
+	loop
+	{
+		if(!RegexMatch(h, n, m, p))
+			break
+		r.Push(m)
+		p := m.Pos + m.Len
+	}
+	return r
+}
+
+;Untested may not work with IC
+DirectedInputMod(m, k)
+{
+    SafetyCheck()
+    hwnd := WinExist("ahk_exe IdleDragons.exe")
+    ControlFocus,, ahk_id %hwnd%
+	vkm := Format("0x{:X}", GetKeyVK(Trim(m, "{}")))
+	vkk := Format("0x{:X}", GetKeyVK(Trim(k, "{}")))
+	PostMessage, 0x0100, %vkm%, 0,, ahk_id %hwnd%
+	Sleep, 10
+	PostMessage, 0x0100, %vkk%, 0,, ahk_id %hwnd%
+	Sleep, 10
+	PostMessage, 0x0101, %vkk%, 0xC0000001,, ahk_id %hwnd%
+	Sleep, 10
+	PostMessage, 0x0101, %vkm%, 0xC0000001,, ahk_id %hwnd%
+	Sleep, 10
+}
+
 DirectedInput(s) 
+{
+    SafetyCheck()
+    hwnd := WinExist("ahk_exe IdleDragons.exe")
+    ControlFocus,, ahk_id %hwnd%
+	m := RegExMatchAll(s, "O)([^{]|{[^}]+})")
+	for k, v in m
+	{
+		vk := GetKeyVK(Trim(v.Value(1), "{}"))
+		if(vk)
+		{
+			vk := Format("0x{:X}", vk)
+			PostMessage, 0x0100, %vk%, 0,, ahk_id %hwnd%
+			Sleep, 10
+			PostMessage, 0x0101, %vk%, 0xC0000001,, ahk_id %hwnd%
+			Sleep, 10
+		}
+	}
+    Sleep, %ScriptSpeed%
+}
+
+DirectedInput_old(s) 
 {
     SafetyCheck()
     ControlFocus,, ahk_exe IdleDragons.exe
@@ -782,17 +836,17 @@ SetFormation(gLevel_Number)
 {
     if (gAvoidBosses AND !Mod(gLevel_Number, 5))
     {
-        DirectedInput("{e}")
+        DirectedInput("e")
     }
     else if (!ReadQuestRemaining(1) AND ReadTransitioning(1) AND gLevel_Number < gAreaLow)
     {
-        DirectedInput("{e}")
+        DirectedInput("e")
         StartTime := A_TickCount
         ElapsedTime := 0
         GuiControl, MyWindow:, gloopID, ReadTransitioning
         while (ElapsedTime < 5000 AND !ReadQuestRemaining(1))
         {
-            DirectedInput("{e}{Right}")
+            DirectedInput("e{Right}")
             ElapsedTime := UpdateElapsedTime(StartTime)
             UpdateStatTimers()
         }
@@ -803,14 +857,14 @@ SetFormation(gLevel_Number)
         GuiControl, MyWindow:, gloopID, Still ReadTransitioning
         while (ElapsedTime < swapSleepMod AND ReadTransitioning(1))
         {
-            DirectedInput("{e}{Right}")
+            DirectedInput("e{Right}")
             ElapsedTime := UpdateElapsedTime(StartTime)
             UpdateStatTimers()
         }
-        DirectedInput("{q}")
+        DirectedInput("q")
     }
     else
-    DirectedInput("{q}")
+    DirectedInput("q")
 }
 
 LoadingZoneREV()
@@ -914,7 +968,7 @@ CheckSetUpREV()
     GuiControl, MyWindow:, gloopID, Looking for no Briv
     while (ReadChampBenchedByID(1,, 58) != 1 AND ElapsedTime < 10000)
     {
-        DirectedInput("{e}")
+        DirectedInput("e")
         ElapsedTime := UpdateElapsedTime(StartTime)
         UpdateStatTimers()
     }
@@ -960,7 +1014,7 @@ StackRestart()
     GuiControl, MyWindow:, gloopID, Transitioning to Stack Restart
     while (ReadTransitioning(1))
     {
-        DirectedInput("{w}")
+        DirectedInput("w")
         ElapsedTime := UpdateElapsedTime(StartTime)
         UpdateStatTimers()
     }
@@ -970,7 +1024,7 @@ StackRestart()
     ;added due to issues with Loading Zone function, see notes therein
     while (ReadChampBenchedByID(1,, 47) != 1 AND ElapsedTime < 15000)
     {
-        DirectedInput("{w}")
+        DirectedInput("w")
         ElapsedTime := UpdateElapsedTime(StartTime)
         UpdateStatTimers()
     }
@@ -994,7 +1048,7 @@ StackRestart()
     SafetyCheck()
     ;Game may save "q" formation before restarting, creating an endless restart loop. LoadinZone() should bring "w" back before triggering a second restart, but monsters could spawn before it does.
     ;this doesn't appear to help the issue above.
-    DirectedInput("{w}")
+    DirectedInput("w")
 }
 
 StackNormal()
@@ -1074,7 +1128,7 @@ StackFarm()
     }
     gPrevLevelTime := A_TickCount
     ;DirectedInput("gq")
-    DirectedInput("{q}")
+    DirectedInput("q")
     ToggleAutoProgress( 1 )
 }
 
@@ -1254,8 +1308,8 @@ GemFarm()
 
         if (!Mod(gLevel_Number, 5) AND Mod(ReadHighestZone(1), 5) AND !ReadTransitioning(1))
         {
-            DirectedInput("{g}")
-            DirectedInput("{g}")
+            DirectedInput("g")
+            DirectedInput("g")
         }
 
         ToggleAutoProgress( 1 )
@@ -1371,7 +1425,7 @@ StuffToSpam(SendRight := 1, gLevel_Number := 1, hew := 1, formation := "")
     if (SendRight)
     var := "{Right}"
     if (gCtrlClickLeveling)
-    var := var "{Ctrl down}``{Ctrl up}"
+    DirectedInputMod("{Ctrl}", "``")
     else if (gClickLeveling)
     var := var "``"
     if (gContinuedLeveling > gLevel_Number)
@@ -1390,6 +1444,6 @@ ToggleAutoProgress( toggleOn := 1 )
 {
     if ( ReadAutoProgressToggled( 1 ) != toggleOn )
     {
-        DirectedInput( "{g}" )
+        DirectedInput( "g" )
     }
 }

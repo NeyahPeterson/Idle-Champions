@@ -550,12 +550,58 @@ Restore_Title:
 	return
 }
 
+;Pass Object Mode Option in regex string
+RegexMatchAll(h, n)
+{
+	r := []
+	p := 1
+	loop
+	{
+		if(!RegexMatch(h, n, m, p))
+			break
+		r.Push(m)
+		p := m.Pos + m.Len
+	}
+	return r
+}
+
+;Untested may not work with IC
+DirectedInputMod(m, k)
+{
+    SafetyCheck()
+    hwnd := WinExist("ahk_exe IdleDragons.exe")
+    ControlFocus,, ahk_id %hwnd%
+	vkm := Format("0x{:X}", GetKeyVK(Trim(m, "{}")))
+	vkk := Format("0x{:X}", GetKeyVK(Trim(k, "{}")))
+	PostMessage, 0x0100, %vkm%, 0,, ahk_id %hwnd%
+	Sleep, 10
+	PostMessage, 0x0100, %vkk%, 0,, ahk_id %hwnd%
+	Sleep, 10
+	PostMessage, 0x0101, %vkk%, 0xC0000001,, ahk_id %hwnd%
+	Sleep, 10
+	PostMessage, 0x0101, %vkm%, 0xC0000001,, ahk_id %hwnd%
+	Sleep, 10
+}
+
 DirectedInput(s) 
 {
-	SafetyCheck()
-	ControlFocus,, ahk_exe IdleDragons.exe
-	ControlSend,, {Blind}%s%, ahk_exe IdleDragons.exe
-	;Sleep, %ScriptSpeed%
+    SafetyCheck()
+    hwnd := WinExist("ahk_exe IdleDragons.exe")
+    ControlFocus,, ahk_id %hwnd%
+	m := RegExMatchAll(s, "O)([^{]|{[^}]+})")
+	for k, v in m
+	{
+		vk := GetKeyVK(Trim(v.Value(1), "{}"))
+		if(vk)
+		{
+			vk := Format("0x{:X}", vk)
+			PostMessage, 0x0100, %vk%, 0,, ahk_id %hwnd%
+			Sleep, 10
+			PostMessage, 0x0101, %vk%, 0xC0000001,, ahk_id %hwnd%
+			Sleep, 10
+		}
+	}
+    Sleep, %ScriptSpeed%
 }
 
 SafetyCheck() 
@@ -687,7 +733,7 @@ ToggleAutoProgress( toggleOn := 1 )
 {
     if ( ReadAutoProgressToggled( 1 ) != toggleOn )
     {
-        DirectedInput( "{g}" )
+        DirectedInput( "g" )
     }
 	return
 }

@@ -96,7 +96,7 @@ global gSwapSleep := SwapSleep
 IniRead, RestartStackTime, UserSettings.ini, Section1, RestartStackTime, 12000
 global gRestartStackTime := RestartStackTime
 ;Intall location
-IniRead, GameInstallPath, Usersettings.ini, Section1, GameInstallPath, C:\Program Files (x86)\Steam\steamapps\common\IdleChampions\IdleDragons.exe
+IniRead, GameInstallPath, Usersettings.ini, Section1, GameInstallPath, com.epicgames.launcher://apps/40cb42e38c0b4a14a1bb133eb3291572?action=launch&silent=true
 global gInstallPath := GameInstallPath
 ;Normal SB farm max time
 IniRead, SBTimeMax, UserSettings.ini, Section1, SBTimeMax, 60000

@@ -93,6 +93,8 @@ IniRead, gRight, ATSettings.ini, Section1, Right, 1
 IniRead, gSpamQ, ATSettings.ini, Section1, SpamQ, 1
 IniRead, gBrivStackStop, ATSettings.ini, Section1, BrivStop, 1
 IniRead, gClickLeveling, ATSettings.ini, Section1, ClickDmg, 1
+IniRead, gBrivSkip, ATSettings.ini, Section1, BrivSkip, 1
+
 loop, 50
 {
 	IniRead, tVal, ATSettings.ini, Section1, SkipZone%A_Index%, 0
@@ -201,7 +203,7 @@ Loop, 10
 Gui, Tab, E Formation Zones
 
 Gui, MyWindow:Add, Text, x15 y38 , Briv skip
-Gui, MyWindow:Add, DDL, vgBrivSkip x+5 y35 w35 gBriv_Changed, 1||2|3|4|5|6|7|8|9
+Gui, MyWindow:Add, DDL, vgBrivSkip x+5 y35 w35 Choose%gBrivSkip% gBriv_Changed, 1||2|3|4|5|6|7|8|9
 Gui, MyWindow:Add, Checkbox, vg100PercentBriv %g100PercentBriv% x+5 y38 gBriv_Changed, 100`%
 Gui, MyWindow:Add, Button, vgLockFour %gLockFour% x+5 y33 gBriv_Lock, Unlock z4``s
 
@@ -403,6 +405,8 @@ Save_Clicked:
 	IniWrite, %gSpamQ%, ATSettings.ini, Section1, SpamQ
 	IniWrite, %gBrivStackStop%, ATSettings.ini, Section1, BrivStop
 	IniWrite, %gClickLeveling%, ATSettings.ini, Section1, ClickDmg
+	IniWrite, %gBrivSkip%, ATSettings.ini, Section1, BrivSkip
+
 	loop, 50
 	{
 		tVal := CheckboxZoneSkip%A_Index%

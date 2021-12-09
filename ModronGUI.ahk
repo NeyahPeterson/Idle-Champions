@@ -1399,7 +1399,7 @@ ModronReset()
 EndAdventure() 
 {
     DirectedInput("r")
-    xClick := (ReadScreenWidth(1) / 2) - 80
+    xClick := (ReadScreenWidth(1) / 2) -20
     yClickMax := ReadScreenHeight(1)
     yClick := yClickMax / 2
     StartTime := A_TickCount

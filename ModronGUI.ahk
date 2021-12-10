@@ -1400,8 +1400,9 @@ EndAdventure()
 {
     DirectedInput("r")
     xClick := (ReadScreenWidth(1) / 2) -20
-    yClickMax := ReadScreenHeight(1)
-    yClick := yClickMax / 2
+    yScreen := ReadScreenHeight(1)
+    yClickMin := yScreen /2
+    yClick := yScreen
     StartTime := A_TickCount
     ElapsedTime := 0
     GuiControl, MyWindow:, gloopID, Manually Ending Adventure
@@ -1409,11 +1410,11 @@ EndAdventure()
     {
         WinActivate, ahk_exe IdleDragons.exe
         MouseClick, Left, xClick, yClick, 1
-        if (yClick < yClickMax)
-        yClick := yClick + 10
+        if (yClick > yClickMin)
+        yClick := yClick - 10
         Else
-        yClick := yClickMax / 2
-        Sleep, 25
+        yClick := yScreen
+        Sleep, 15
         ElapsedTime := UpdateElapsedTime(StartTime)
         UpdateStatTimers()
     }

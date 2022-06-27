@@ -578,7 +578,19 @@ class IC_SharedFunctions_Class
             return true
         ;bench briv if avoid bosses setting is on and on a boss zone
         if (settings[ "AvoidBosses" ] AND !Mod( this.Memory.ReadCurrentZone(), 5 ))
-            return true
+            return True
+
+        jumpArr := [8]
+        avoidArr := [42,43,45,48,50]
+
+        for j,jump in jumpArr
+        {
+            expectedLanding := Mod(this.Memory.ReadCurrentZone() + jump, 50)
+            for i,avoid in avoidArr
+                if (avoid == expectedLanding)
+                    return true
+        }
+
         ;perform no other checks if 'Briv Jump Buffer' setting is disabled
         if !(settings[ "BrivJumpBuffer" ])
             return false
@@ -596,9 +608,22 @@ class IC_SharedFunctions_Class
         ;keep Briv benched if 'Avoid Bosses' setting is enabled and on a boss zone
         if (settings[ "AvoidBosses" ] AND !Mod( this.Memory.ReadCurrentZone(), 5 ))
             return false
+
+        jumpArr := [8]
+        avoidArr := [42,43,45,48,50]
+
+        for j,jump in jumpArr
+        {
+            expectedLanding := Mod(this.Memory.ReadCurrentZone() + jump, 50)
+            for i,avoid in avoidArr
+                if (avoid == expectedLanding)
+                    return false
+        }
+
         ;unbench briv if 'Briv Jump Buffer' setting is disabled and transition direction is "OnFromLeft"
         if (!(settings[ "BrivJumpBuffer" ]) AND this.Memory.ReadFormationTransitionDir() == 0)
             return true
+
         ;perform no other checks if 'Briv Jump Buffer' setting is disabled
         else if !(settings[ "BrivJumpBuffer" ])
             return false
@@ -670,7 +695,7 @@ class IC_SharedFunctions_Class
             while(!(this.Hwnd := WinExist( "ahk_exe IdleDragons.exe" )) AND ElapsedTime < 32000)
                 ElapsedTime := A_TickCount - StartTime
             this.ActivateLastWindow()
-            Process, Priority, % this.PID, High
+            Process, Priority, % this.PID, BelowNormal
             this.Memory.OpenProcessReader()
             loadingZone := this.WaitForGameReady()
             this.ResetServerCall()

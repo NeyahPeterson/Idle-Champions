@@ -135,7 +135,7 @@ class IC_BrivGemFarm_Class
         g_SF.Hwnd := WinExist("ahk_exe IdleDragons.exe")
         Process, Exist, IdleDragons.exe
         g_SF.PID := ErrorLevel
-        Process, Priority, % g_SF.PID, High
+        Process, Priority, % g_SF.PID, BelowNormal
         g_SF.Memory.OpenProcessReader()
         if(g_SF.VerifyAdventureLoaded() < 0)
             return

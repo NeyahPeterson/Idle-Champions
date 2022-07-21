@@ -577,18 +577,17 @@ class IC_SharedFunctions_Class
         if (this.Memory.ReadTransitionOverrideSize() == 1 AND this.Memory.ReadTransitionDirection() != 2 AND this.Memory.ReadFormationTransitionDir() == 3 )
             return true
         ;bench briv if avoid bosses setting is on and on a boss zone
-        if (settings[ "AvoidBosses" ] AND !Mod( this.Memory.ReadCurrentZone(), 5 ))
-            return True
+        if (settings[ "AvoidBosses" ]) {
+            jumpArr := [8]
+            avoidArr := [42,43,45,48,50]
 
-        jumpArr := [8]
-        avoidArr := [42,43,45,48,50]
-
-        for j,jump in jumpArr
-        {
-            expectedLanding := Mod(this.Memory.ReadCurrentZone() + jump, 50)
-            for i,avoid in avoidArr
-                if (avoid == expectedLanding)
-                    return true
+            for j,jump in jumpArr
+            {
+                expectedLanding := Mod(this.Memory.ReadCurrentZone() + jump, 50)
+                for i,avoid in avoidArr
+                    if (avoid == expectedLanding)
+                        return true
+            }
         }
 
         ;perform no other checks if 'Briv Jump Buffer' setting is disabled
@@ -606,18 +605,17 @@ class IC_SharedFunctions_Class
     UnBenchBrivConditions(settings)
     {
         ;keep Briv benched if 'Avoid Bosses' setting is enabled and on a boss zone
-        if (settings[ "AvoidBosses" ] AND !Mod( this.Memory.ReadCurrentZone(), 5 ))
-            return false
+        if (settings[ "AvoidBosses" ]) {
+            jumpArr := [8]
+            avoidArr := [42,43,45,48,50]
 
-        jumpArr := [8]
-        avoidArr := [42,43,45,48,50]
-
-        for j,jump in jumpArr
-        {
-            expectedLanding := Mod(this.Memory.ReadCurrentZone() + jump, 50)
-            for i,avoid in avoidArr
-                if (avoid == expectedLanding)
-                    return false
+            for j,jump in jumpArr
+            {
+                expectedLanding := Mod(this.Memory.ReadCurrentZone() + jump, 50)
+                for i,avoid in avoidArr
+                    if (avoid == expectedLanding)
+                        return false
+            }
         }
 
         ;unbench briv if 'Briv Jump Buffer' setting is disabled and transition direction is "OnFromLeft"

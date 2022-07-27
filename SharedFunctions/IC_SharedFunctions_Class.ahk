@@ -29,6 +29,10 @@ class IC_SharedData_Class
     PurchasedSilverChests := 0
     ShinyCount := 0
     TriggerStart := false
+    TotalRollBacks := 0
+    BadAutoProgress := 0
+    PreviousStacksFromOffline := 0
+    TargetStacks := 0
 
     Close()
     {
@@ -79,6 +83,8 @@ class IC_SharedFunctions_Class
     ErrorKeyUp := 0
     GameStartFormation := 1
     ModronResetZone := 0
+    CurrentZone := ""
+    Settings := ""
 
     __new()
     {
@@ -92,7 +98,7 @@ class IC_SharedFunctions_Class
     ; returns this class's version information (string)
     GetVersion()
     {
-        return "v2.5.4, 2022-02-15"
+        return "v2.5.5, 2022-07-19"
     }
 
     ;Gets data from JSON file
@@ -409,6 +415,7 @@ class IC_SharedFunctions_Class
         while ( ElapsedTime < timeout AND this.Memory.ReadCurrentZone() < DashWaitMaxZone AND !this.IsDashActive() )
         {
             this.ToggleAutoProgress(0)
+            this.SetFormation()
             ElapsedTime := A_TickCount - StartTime
             g_SharedData.LoopString := "Dash Wait: " . ElapsedTime . " / " . estimate
         }
@@ -548,16 +555,20 @@ class IC_SharedFunctions_Class
     ; a method to swap formations and cancel briv's jump animation.
     SetFormation(settings := "")
     {
+        if(settings != "")
+        {
+            this.Settings := settings
+        }
         ;only send input messages if necessary
         brivBenched := this.Memory.ReadChampBenchedByID(58)
         ;check to bench briv
-        if (!brivBenched AND this.BenchBrivConditions(settings))
+        if (!brivBenched AND this.BenchBrivConditions(this.Settings))
         {
             this.DirectedInput(,,["{e}"]*)
             g_SharedData.SwapsMadeThisRun++
         }
         ;check to unbench briv
-        else if (brivBenched AND this.UnBenchBrivConditions(settings))
+        else if (brivBenched AND this.UnBenchBrivConditions(this.Settings))
         {
             this.DirectedInput(,,["{q}"]*)
             g_SharedData.SwapsMadeThisRun++
@@ -576,20 +587,9 @@ class IC_SharedFunctions_Class
         ;bench briv if jump animation override is added to list and it isn't a quick transition (reading ReadFormationTransitionDir makes sure QT isn't read too early)
         if (this.Memory.ReadTransitionOverrideSize() == 1 AND this.Memory.ReadTransitionDirection() != 2 AND this.Memory.ReadFormationTransitionDir() == 3 )
             return true
-        ;bench briv if avoid bosses setting is on and on a boss zone
-        if (settings[ "AvoidBosses" ]) {
-            jumpArr := [8]
-            avoidArr := [42,43,45,48,50]
-
-            for j,jump in jumpArr
-            {
-                expectedLanding := Mod(this.Memory.ReadCurrentZone() + jump, 50)
-                for i,avoid in avoidArr
-                    if (avoid == expectedLanding)
-                        return true
-            }
-        }
-
+        ;bench briv not in a preferred briv jump zone
+        if (settings["PreferredBrivJumpZones"][Mod( this.Memory.ReadCurrentZone(), 50) == 0 ? 50 : Mod( this.Memory.ReadCurrentZone(), 50) ] == 0)
+            return true
         ;perform no other checks if 'Briv Jump Buffer' setting is disabled
         if !(settings[ "BrivJumpBuffer" ])
             return false
@@ -604,24 +604,12 @@ class IC_SharedFunctions_Class
     ; True/False on whether Briv should be unbenched based on game conditions.
     UnBenchBrivConditions(settings)
     {
-        ;keep Briv benched if 'Avoid Bosses' setting is enabled and on a boss zone
-        if (settings[ "AvoidBosses" ]) {
-            jumpArr := [8]
-            avoidArr := [42,43,45,48,50]
-
-            for j,jump in jumpArr
-            {
-                expectedLanding := Mod(this.Memory.ReadCurrentZone() + jump, 50)
-                for i,avoid in avoidArr
-                    if (avoid == expectedLanding)
-                        return false
-            }
-        }
-
+        ; do not unbench briv if party is not on a perferred briv jump zone.
+        if (settings["PreferredBrivJumpZones"][Mod( this.Memory.ReadCurrentZone(), 50) == 0 ? 50 :  Mod(this.Memory.ReadCurrentZone(), 50)] == 0)
+            return false
         ;unbench briv if 'Briv Jump Buffer' setting is disabled and transition direction is "OnFromLeft"
         if (!(settings[ "BrivJumpBuffer" ]) AND this.Memory.ReadFormationTransitionDir() == 0)
             return true
-
         ;perform no other checks if 'Briv Jump Buffer' setting is disabled
         else if !(settings[ "BrivJumpBuffer" ])
             return false
@@ -691,9 +679,13 @@ class IC_SharedFunctions_Class
             }
             ; Process exists, wait for the window:
             while(!(this.Hwnd := WinExist( "ahk_exe IdleDragons.exe" )) AND ElapsedTime < 32000)
+            {
+                WinGetActiveTitle, savedActive
+                this.SavedActiveWindow := savedActive
                 ElapsedTime := A_TickCount - StartTime
+            }
             this.ActivateLastWindow()
-            Process, Priority, % this.PID, BelowNormal
+            Process, Priority, % this.PID, High
             this.Memory.OpenProcessReader()
             loadingZone := this.WaitForGameReady()
             this.ResetServerCall()
@@ -774,6 +766,7 @@ class IC_SharedFunctions_Class
             if(this.Memory.ReadResetting() AND this.Memory.ReadCurrentZone() <= 1 AND this.Memory.ReadCurrentObjID() == "")
                 this.WorldMapRestart()
             this.RecoverFromGameClose(this.GameStartFormation)
+            this.BadSaveTest()
             return false
         }
          ; game loaded but can't read zone? failed to load proper on last load? (Tests if game started without script starting it)
@@ -786,6 +779,14 @@ class IC_SharedFunctions_Class
             this.ResetServerCall()
         }
         return true
+    }
+
+    BadSaveTest()
+    {
+        if(this.CurrentZone != "" and this.CurrentZone - 1 > g_SF.Memory.ReadCurrentZone())
+            g_SharedData.TotalRollBacks++
+        else if (this.CurrentZone != "" and this.CurrentZone < g_SF.Memory.ReadCurrentZone())
+            g_SharedData.BadAutoProgress++
     }
 
     ; Reloads memory reads after game has closed. For updating GUI.
@@ -847,14 +848,15 @@ class IC_SharedFunctions_Class
         ElapsedTime := counter := 0
         while(!isCurrentFormation AND ElapsedTime < timeout AND !this.Memory.ReadNumAttackingMonstersReached())
         {
-            ElapsedTime := A_TickCount - StartTime
             isCurrentFormation := this.IsCurrentFormation( formationFavorite )
+            ElapsedTime := A_TickCount - StartTime
             if(ElapsedTime > sleepTime * counter AND IsObject(spam))
             {
                 this.DirectedInput(,, spam* )
                 counter++
             }
         }
+        isCurrentFormation := this.IsCurrentFormation( formationFavorite )
         ;spam.Push(this.GetFormationFKeys(formationFavorite1)*) ; make sure champions are leveled
         ;;;if ( this.Memory.ReadNumAttackingMonstersReached() OR this.Memory.ReadNumRangedAttackingMonsters() )
             g_SharedData.LoopString := "Under attack. Retreating to change formations..."
@@ -1064,13 +1066,83 @@ class IC_SharedFunctions_Class
         g_ServerCall.webroot := isWebRootValid ? this.Memory.ReadWebRoot() : g_ServerCall.webroot
         g_ServerCall.networkID := this.Memory.ReadPlatform() ? this.Memory.ReadPlatform() : g_ServerCall.networkID
         g_ServerCall.activeModronID := this.Memory.ReadActiveGameInstance() ? this.Memory.ReadActiveGameInstance() : 1 ; 1, 2, 3 for modron cores 1, 2, 3
-        g_ServerCall.activePatronID := this.Memory.ReadPatronID() ; 0 = no patron
+        g_ServerCall.activePatronID := this.Memory.ReadPatronID() == "" ? g_ServerCall.activePatronID : this.Memory.ReadPatronID() ; 0 = no patron
         g_ServerCall.UpdateDummyData()
     }
 
     ;======================
     ; New Helper Functions
     ;======================
+
+    ; Calculates the number of Haste stacks are required to jump from area 1 to the modron's reset area. worstCase default is true.
+    CalculateBrivStacksToReachNextModronResetZone(worstCase := true)
+    {
+        jumps := 0
+        consume := this.IsBrivMetalborn() ? -.032 : -.04  ;Default := 4%, SteelBorn := 3.2%
+        skipAmount := ActiveEffectKeySharedFunctions.Briv.BrivUnnaturalHasteHandler.ReadSkipAmount()
+        skipChance := ActiveEffectKeySharedFunctions.Briv.BrivUnnaturalHasteHandler.ReadSkipChance()
+        distance := this.Memory.GetCoreTargetAreaByInstance(1)
+        ; skipAmount == 1 is a special case where Briv won't use stacks when he skips 0 areas.
+        if (worstCase)
+            jumps := skipAmount == 1 ? Floor(distance / (skipAmount+1)) : Floor(distance / (skipChance >= 1 ? skipAmount + 1 : skipAmount))
+        else
+            jumps := skipAmount == 1 ? Floor(distance / ((skipAmount+1) * skipChance)) : Floor(distance / ((skipAmount * (1-skipChance)) + ((skipAmount+1) * skipChance)))
+        stacks := Ceil(49 / (1+consume)**jumps)
+        return stacks
+    }
+
+    ; Calculates the number of Haste stacks that will be left over once when the target zone has been reached. Defaults: startZone=1, targetZone=1, worstCase=true.
+    CalculateBrivStacksLeftAtTargetZone(startZone := 1, targetZone := 1, worstCase := true)
+    {
+        jumps := 0
+        consume := this.IsBrivMetalborn() ? -.032 : -.04 ;Default := 4%, MetalBorn := 3.2%
+        stacks := ActiveEffectKeySharedFunctions.Briv.BrivUnnaturalHasteHandler.ReadHasteStacks()
+        skipAmount := ActiveEffectKeySharedFunctions.Briv.BrivUnnaturalHasteHandler.ReadSkipAmount()
+        skipChance := ActiveEffectKeySharedFunctions.Briv.BrivUnnaturalHasteHandler.ReadSkipChance()
+        distance := targetZone - startZone
+        ; skipAmount == 1 is a special case where Briv won't use stacks when he skips 0 areas.
+        if (worstCase)
+            jumps := skipAmount == 1 ? Max(Floor(distance / (skipAmount+1)), 0) : Max(Floor(distance / skipAmount), 0)
+        else
+            jumps := skipAmount == 1 ? Max(Floor(distance / ((skipAmount+1) * skipChance)), 0) : Max(Floor(distance / ((skipAmount * (1-skipChance)) + ((skipAmount+1) * skipChance))), 0)
+
+        return Floor(stacks*(1+consume)**jumps)
+    }
+
+    ; Calculates the number of Haste stacks will be used to progress from the current zone to the modron reset area.
+    CalculateBrivStacksConsumedToReachModronResetZone()
+    {
+        stacks := ActiveEffectKeySharedFunctions.Briv.BrivUnnaturalHasteHandler.ReadHasteStacks()
+        return stacks - this.CalculateBrivStacksLeftAtTargetZone(this.Memory.ReadCurrentZone(), this.Memory.GetCoreTargetAreaByInstance(1))
+    }
+
+    ; Calculates the farthest zone Briv expects to jump to with his current stacks on his current zone.  avgMinOrMax: avg = 0, min = 1, max = 2.
+    CalculateMaxZone(avgMinOrMax := 0)
+    {
+        ; 1 jump results will change based on the current zone depending on whether the previous zones had jumps and used stacks or not.
+        consume := this.IsBrivMetalborn() ? -.032 : -.04 ;Default := 4%, MetalBorn := 3.2%
+        stacks := ActiveEffectKeySharedFunctions.Briv.BrivUnnaturalHasteHandler.ReadHasteStacks()
+        currentZone := this.Memory.ReadCurrentZone() 
+        skipAmount := ActiveEffectKeySharedFunctions.Briv.BrivUnnaturalHasteHandler.ReadSkipAmount()
+        skipChance := ActiveEffectKeySharedFunctions.Briv.BrivUnnaturalHasteHandler.ReadSkipChance()
+        jumps := Floor(Log(49 / Max(stacks,49)) / Log(1+consume))
+        avgJumpDistance := skipAmount * (1-skipChance) + (skipAmount+1) * skipChance
+        maxJumpDistance := skipAmount+1
+        minJumpDistance := skipAmount
+        ;zones := jumps * avgJumpDistance
+        zones := avgMinOrMax == 0 ? jumps * avgJumpDistance : (avgMinOrMax == 1 ? jumps * minJumpDistance : jumps * maxJumpDistance)
+        return currentZone + zones
+    }
+
+    ; Returns whether Briv's spec in the modron core is set to Metalborn.
+    IsBrivMetalborn()
+    {
+        brivID := 58
+        specID := this.Memory.GetCoreSpecializationForHero(brivID)
+        if (specID == 3455)
+            return true
+        return false
+    }
 
     /*  GetFormationFKeys - Gets a list of FKeys required to level all champions in the formation passed to it.
 

@@ -685,7 +685,7 @@ class IC_SharedFunctions_Class
                 ElapsedTime := A_TickCount - StartTime
             }
             this.ActivateLastWindow()
-            Process, Priority, % this.PID, High
+            Process, Priority, % this.PID, BelowNormal
             this.Memory.OpenProcessReader()
             loadingZone := this.WaitForGameReady()
             this.ResetServerCall()

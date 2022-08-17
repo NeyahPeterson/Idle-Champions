@@ -153,8 +153,8 @@ class IC_BrivGemFarm_Component
 
     TestGameVersion()
     {
-        gameVersion := g_SF.Memory.ReadBaseGameVersion()
-        importsVersion := g_SF.Memory.is64Bit() ? g_ImportsGameVersion64 : g_ImportsGameVersion32
+        gameVersion := g_SF.Memory.ReadGameVersion()
+        importsVersion := g_SF.Memory.GameManager.is64Bit() ? g_ImportsGameVersion64 . g_ImportsGameVersionPostFix64 : g_ImportsGameVersion32 . g_ImportsGameVersionPostFix32
         GuiControl, ICScriptHub: +cRed, Warning_Imports_Bad, 
         if (gameVersion == "")
             GuiControl, ICScriptHub:, Warning_Imports_Bad, % "⚠ Warning: Memory Read Failure. Check for updated Imports."
@@ -225,17 +225,17 @@ class IC_BrivGemFarm_Component
         Gui, ICScriptHub:Submit, NoHide
         g_BrivUserSettings[ "Fkeys" ] := FkeysCheck
         g_BrivUserSettings[ "StackFailRecovery" ] := StackFailRecoveryCheck
-        g_BrivUserSettings[ "StackZone" ] := NewStackZone
-        g_BrivUserSettings[ "MinStackZone" ] := NewMinStackZone
-        g_BrivUserSettings[ "TargetStacks" ] := NewTargetStacks
-        g_BrivUserSettings[ "RestartStackTime" ] := NewRestartStackTime
+        g_BrivUserSettings[ "StackZone" ] := StrReplace(NewStackZone, ",")
+        g_BrivUserSettings[ "MinStackZone" ] := StrReplace(NewMinStackZone, ",")
+        g_BrivUserSettings[ "TargetStacks" ] := StrReplace(NewTargetStacks, ",")
+        g_BrivUserSettings[ "RestartStackTime" ] := StrReplace(NewRestartStackTime, ",")
         g_BrivUserSettings[ "DisableDashWait" ] := DisableDashWaitCheck
         g_BrivUserSettings[ "DoChests" ] := DoChestsCheck
         g_BrivUserSettings[ "BuySilvers" ] := BuySilversCheck
         g_BrivUserSettings[ "BuyGolds" ] := BuyGoldsCheck
         g_BrivUserSettings[ "OpenSilvers" ] := OpenSilversCheck
         g_BrivUserSettings[ "OpenGolds" ] := OpenGoldsCheck
-        g_BrivUserSettings[ "MinGemCount" ] := NewMinGemCount
+        g_BrivUserSettings[ "MinGemCount" ] := StrReplace(NewMinGemCount, ",")
         g_BrivUserSettings[ "AutoCalculateBrivStacks" ] := BrivAutoCalcStatsCheck
         g_SF.WriteObjectToJSON( A_LineFile . "\..\BrivGemFarmSettings.json" , g_BrivUserSettings )
         try ; avoid thrown errors when comobject is not available.

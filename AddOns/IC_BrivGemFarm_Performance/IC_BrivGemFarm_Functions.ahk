@@ -292,7 +292,8 @@ class IC_BrivGemFarm_Class
     {
         if ( g_BrivUserSettings[ "RestartStackTime" ] )
         {
-            return g_SF.Memory.ReadHasteStacks() + g_SF.Memory.ReadSBStacks()
+            ; return g_SF.Memory.ReadHasteStacks() + g_SF.Memory.ReadSBStacks()
+            return g_SF.Memory.ReadSBStacks()
         }
         else
         {

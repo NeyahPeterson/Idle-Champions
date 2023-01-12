@@ -1,7 +1,7 @@
 GUIFunctions.AddTab("Chests")
 
 Gui, ICScriptHub:Tab, Chests
-Gui, ICScriptHub:Add, Text, x15 y+15 w350, % "Note: Game needs to be open to read chests into lists."
+Gui, ICScriptHub:Add, Text, x15 y+15 w350, % "Note: Game needs to be open to load user data and read chests into lists."
 Gui, ICScriptHub:Add, Text, x15 y+5 w350, % "Only buy or open chests while game is closed. (Yes, this is a hassle.)"
 Gui, ICScriptHub:Add, GroupBox, x15 y+15 w425 h150 vGroupBoxChestPurchaseID, Buy Chests: 
 Gui, ICScriptHub:Add, ComboBox, xp+15 yp+15 w300 vChestPurchaseComboBoxID
@@ -34,20 +34,26 @@ class IC_ChestPurchaser_Component
 {
     ReadChests()
     {
-        if(WinExist("ahk_exe IdleDragons.exe")) ; only update when the game is open
+        if(WinExist("ahk_exe " . g_userSettings[ "ExeName"])) ; only update when the game is open
             g_SF.Memory.OpenProcessReader()
         else
             return
+        g_SF.ResetServerCall()
         size := g_SF.Memory.ReadChestDefinesSize()
-        if(!size)
+        comboBoxOptions := "|"
+        if(!size OR size > 3000 OR size < 0)
+        {
+            comboBoxOptions .= "-- Error Reading Chests --"
+            GuiControl,ICScriptHub:, ChestOpenComboBoxID, %comboBoxOptions%
+            GuiControl,ICScriptHub:, ChestPurchaseComboBoxID, %comboBoxOptions%
             return
+        }
         loop, %size%
         {
             chestID := g_SF.Memory.GetChestIDBySlot(A_Index)
             chestName := g_SF.Memory.GetChestNameBySlot(A_Index)
             comboBoxOptions .= chestID . " " . chestName . "|"
         }
-        g_SF.ResetServerCall()
         GuiControl,ICScriptHub:, ChestOpenComboBoxID, %comboBoxOptions%
         GuiControl,ICScriptHub:, ChestPurchaseComboBoxID, %comboBoxOptions%
     }
